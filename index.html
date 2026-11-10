@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PRECISION RANGE</title>
+  <meta name="description" content="PRECISION RANGE — 3D 스포츠 사격장 시뮬레이터 (Three.js / WebGL)" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%23e3a948' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23e3a948'/%3E%3C/svg%3E" />
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  } }
+  </script>
+</head>
+<body>
+  <canvas id="gl"></canvas>
+
+  <!-- LOADING -->
+  <div id="loading" class="screen show">
+    <div class="load-box">
+      <div class="brand-mark"><i></i></div>
+      <div class="load-title">PRECISION RANGE</div>
+      <div class="load-bar"><b></b></div>
+      <div class="load-text" id="loadText">INITIALISING</div>
+    </div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div id="menu" class="screen">
+    <div class="menu-left">
+      <div class="brand">
+        <div class="brand-mark"><i></i></div>
+        <div>
+          <div class="brand-name">PRECISION RANGE</div>
+          <div class="brand-sub">SPORT SHOOTING SIMULATOR</div>
+        </div>
+      </div>
+      <nav class="menu-nav">
+        <button data-go="setup"><span class="idx">01</span>START RANGE<em>경기 시작</em></button>
+        <button data-go="armory"><span class="idx">02</span>ARMORY<em>총기 · 조준경 · 외형</em></button>
+        <button data-go="records"><span class="idx">03</span>RECORDS<em>기록 · 통계</em></button>
+        <button data-go="settings"><span class="idx">04</span>SETTINGS<em>그래픽 · 조작 · 사운드</em></button>
+      </nav>
+      <div class="menu-foot">
+        <div class="pb-line" id="menuPB">—</div>
+        <div class="dim">v1.0 · 모든 총기·장비는 가상의 스포츠 모델입니다 · 모든 사운드는 실시간 합성</div>
+      </div>
+    </div>
+    <div class="menu-keys">
+      <div><kbd>MOUSE</kbd> 조준</div><div><kbd>LMB</kbd> 발사</div><div><kbd>RMB</kbd> 조준 화면</div>
+      <div><kbd>WHEEL</kbd> 배율</div><div><kbd>SHIFT</kbd> 집중</div><div><kbd>R</kbd> 재장전</div><div><kbd>ESC</kbd> 일시정지</div>
+    </div>
+  </div>
+
+  <!-- SETUP / START RANGE -->
+  <div id="setup" class="screen panel-screen">
+    <header class="scr-head">
+      <button class="back" data-go="menu">← BACK</button>
+      <h2>START RANGE</h2>
+      <div class="steps"><span>01 MODE</span><span>02 RANGE</span><span>03 WEAPON</span><span>04 OPTIC &amp; FINISH</span></div>
+    </header>
+    <div class="setup-grid">
+      <section class="col">
+        <h3>MODE</h3>
+        <div class="list" id="modeList"></div>
+      </section>
+      <section class="col">
+        <h3>RANGE</h3>
+        <div class="list" id="rangeList"></div>
+        <h3 class="mt">TIME OF DAY</h3>
+        <div class="chips" id="todChips"></div>
+        <h3 class="mt">DISTANCE</h3>
+        <div class="chips" id="distChips"></div>
+      </section>
+      <section class="col col-wide">
+        <h3>WEAPON</h3>
+        <div class="tabs" id="weaponTabs"></div>
+        <div class="preview-slot" id="setupPreviewSlot"></div>
+        <div class="loadout" id="setupLoadout"></div>
+      </section>
+    </div>
+    <footer class="setup-foot">
+      <div class="summary" id="setupSummary"></div>
+      <button class="primary" id="startBtn">ENTER RANGE <span>→</span></button>
+    </footer>
+  </div>
+
+  <!-- ARMORY -->
+  <div id="armory" class="screen panel-screen">
+    <header class="scr-head">
+      <button class="back" data-go="menu">← BACK</button>
+      <h2>ARMORY</h2>
+      <div class="dim">드래그하여 회전 · 휠로 확대</div>
+    </header>
+    <div class="armory-grid">
+      <section class="col"><h3>WEAPONS</h3><div class="list" id="armoryList"></div></section>
+      <section class="col col-preview"><div class="preview-slot big" id="armoryPreviewSlot"></div></section>
+      <section class="col">
+        <h3 id="armName">—</h3>
+        <div class="dim kr" id="armDesc"></div>
+        <div class="stats" id="armStats"></div>
+        <div class="spec" id="armSpec"></div>
+        <div class="loadout" id="armLoadout"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- RECORDS -->
+  <div id="records" class="screen panel-screen">
+    <header class="scr-head">
+      <button class="back" data-go="menu">← BACK</button>
+      <h2>RECORDS</h2>
+      <div class="dim">IndexedDB에 저장 · 새로고침 후에도 유지</div>
+    </header>
+    <div class="records-body">
+      <div class="tiles" id="recTiles"></div>
+      <div class="rec-grid">
+        <section><h3>BY WEAPON</h3><table class="tbl" id="recWeapons"></table></section>
+        <section><h3>RECENT MATCHES</h3><div class="recent" id="recRecent"></div></section>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="settings" class="screen panel-screen">
+    <header class="scr-head">
+      <button class="back" id="settingsBack">← BACK</button>
+      <h2>SETTINGS</h2>
+      <div class="dim" id="fpsInfo"></div>
+    </header>
+    <div class="settings-body" id="settingsBody"></div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="screen">
+    <div class="hud-tl">
+      <div class="hud-label" id="hudMode">—</div>
+      <div class="hud-prog" id="hudProg">—</div>
+      <div class="hud-time" id="hudTime"></div>
+    </div>
+    <div class="hud-tr">
+      <div class="hud-label">TOTAL</div>
+      <div class="hud-score"><span id="hudTotal">0</span><small id="hudDec">0.0</small></div>
+      <div class="hud-last" id="hudLast"></div>
+    </div>
+    <div class="hud-monitor">
+      <canvas id="monitor" width="340" height="340"></canvas>
+      <div class="mon-cap"><span id="monSeries">SERIES 1</span><span id="monDist">—</span></div>
+    </div>
+    <div class="hud-bl" id="hudBody">
+      <div class="hud-label">BREATH <b id="breathLabel">—</b></div>
+      <canvas id="breathCv" width="360" height="80"></canvas>
+      <div class="bpm"><span class="heart" id="heart">♥</span><span id="bpm">72</span><small>BPM</small><span class="fat" id="fatigue">FATIGUE 0%</span></div>
+      <div class="hud-label">FOCUS <b id="focusState">READY</b></div>
+      <div class="focusbar"><b id="focusFill"></b></div>
+    </div>
+    <div class="hud-br">
+      <div class="hud-label" id="hudWeapon">—</div>
+      <div class="ammo"><span id="ammoNum">10</span><small id="ammoMax">/10</small></div>
+      <div class="pips" id="ammoPips"></div>
+      <div class="hud-optic"><span id="hudMag">1.0×</span><span id="hudDist">10 M</span></div>
+    </div>
+    <div class="crosshair" id="crosshair"></div>
+    <div class="center-msg" id="centerMsg"><div class="cm-a"></div><div class="cm-b"></div></div>
+    <div class="hitpop" id="hitpop"></div>
+    <div class="engage" id="engage">CLICK TO ENGAGE</div>
+  </div>
+
+  <!-- PAUSE -->
+  <div id="pause" class="screen">
+    <div class="pause-box">
+      <div class="hud-label">PAUSED</div>
+      <button id="pResume">RESUME</button>
+      <button id="pRestart">RESTART</button>
+      <button id="pEnd">END SESSION · RESULTS</button>
+      <button id="pSettings">SETTINGS</button>
+      <button id="pQuit">QUIT TO MENU</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="screen panel-screen">
+    <header class="scr-head">
+      <h2>RESULTS</h2>
+      <div class="dim" id="resMeta"></div>
+    </header>
+    <div class="results-grid">
+      <section class="res-target">
+        <canvas id="resTarget" width="900" height="900"></canvas>
+        <div class="replay">
+          <button id="rpPrev">◀</button><button id="rpPlay">▶ REPLAY</button><button id="rpNext">▶</button>
+          <span id="rpInfo">ALL SHOTS</span>
+        </div>
+      </section>
+      <section class="res-data">
+        <div class="res-total"><span id="resTotal">0</span><small id="resTotalDec">0.0</small><em id="resPB"></em></div>
+        <div class="tiles small" id="resTiles"></div>
+        <h3>DISTRIBUTION</h3>
+        <canvas id="resHist" width="720" height="200"></canvas>
+        <h3>SHOTS</h3>
+        <div class="shotlist" id="resShots"></div>
+      </section>
+    </div>
+    <footer class="setup-foot">
+      <div class="summary" id="resCompare"></div>
+      <div class="btns"><button id="resMenu">MENU</button><button class="primary" id="resRetry">RETRY <span>↻</span></button></div>
+    </footer>
+  </div>
+
+  <div id="toasts"></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
